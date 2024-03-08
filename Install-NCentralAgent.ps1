@@ -39,12 +39,10 @@ Email: chris.stone@nuwavepartners.com
 #Requires -Version 3 -RunAsAdministrator
 
 Param (
-	[uri]	$AgentInstaller = 'https://nuwave.link/rmm/WindowsAgentSetup.exe',
-
 	[ValidateScript({
 			[System.Net.Dns]::Resolve($Hostname)
 		})]
-	[string]	$Server = 'rmm.nuwavepartners.com',
+	[string]	$Server,
 	[ValidateScript({
 			[int32]::TryParse($_, [ref]([int32] $outputInt))
 		})]
@@ -53,9 +51,12 @@ Param (
 			[guid]::TryParse($_, [ref]([guid]$outputGuid))
 		})]
 	[string]	$RegistrationToken,
+	[ValidateScript({
+			[version]::TryParse($_, [ref]([version]$outputVersion))
+	})]
+	[string]	$AgentVersion,
 
-	[switch]	$ForceReinstall,
-	[string]	$LocalFile = $null
+	[switch]	$ForceReinstall
 )
 
 ################################## THE SCRIPT ##################################
@@ -105,7 +106,7 @@ if ($ForceReinstall -or $ReinstallAgent) {
 	$Downloaded = $false
 	if ([string]::IsNullOrEmpty($LocalFile)) {
 		$LocalFile = Join-Path $env:TEMP $AgentInstaller.Segments[-1]
-		Start-BitsTransfer -Source $AgentInstaller -Destination $LocalFile
+		Start-BitsTransfer -Source ('https://' + $Server + '/download/' + $AgentVersion + '/winnt/N-central/WindowsAgentSetup.exe') -Destination $LocalFile
 		$Downloaded = $true
 	}
 
@@ -193,38 +194,3 @@ if ($ForceReinstall -or $ReinstallTC) {
 
 	Remove-Item -Path $TCLocalFile -ErrorAction SilentlyContinue
 }
-
-# SIG # Begin signature block
-# MIIF6QYJKoZIhvcNAQcCoIIF2jCCBdYCAQExDzANBglghkgBZQMEAgEFADB5Bgor
-# BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDtFkeEhp4g3KVE
-# JPNBJ2sfz5xv6/gnYoHYkQLabDYDSqCCA0IwggM+MIICJqADAgECAhBZVP3hQBiZ
-# h0jf8jC4J2H6MA0GCSqGSIb3DQEBCwUAMDcxNTAzBgNVBAMMLENocmlzIFN0b25l
-# IDxjaHJpcy5zdG9uZUBudXdhdmVwYXJ0bmVycy5jb20+MB4XDTIwMDIxODIxNDE0
-# MFoXDTI1MDIxODIxNTE0MVowNzE1MDMGA1UEAwwsQ2hyaXMgU3RvbmUgPGNocmlz
-# LnN0b25lQG51d2F2ZXBhcnRuZXJzLmNvbT4wggEiMA0GCSqGSIb3DQEBAQUAA4IB
-# DwAwggEKAoIBAQCg62030xLyXQrQxKA3U1sLBsCbsMuG8CNF0nPBbnx8wy1xSVmR
-# NjDj6vHQrrXCEoDPGThIEZfAi2BKu+BiW93pKyYvjH4KluYPaKfpM8DrT1gTfnVJ
-# 8W8IMhlO8LptwCV86aLYhcjtLX2Toa130u1uxrr6YrjQ2PQGsG7BUordtbd4vGvD
-# etCTtH3il+sHojE1COSwRUQNSY/3xSGm4otjZHg3sGcFK4KzcK4M572nDPXZeuFr
-# laBOum+duPBQOo5Za6363tNRpBNff7SNCcftmmA+Wy+Uq8r9/fZR6G9hFm4PB4DF
-# dNK5VCkb+qmWa4XaxfEy/EnyZCuk7cH6sJVZAgMBAAGjRjBEMA4GA1UdDwEB/wQE
-# AwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQUolHkzzvm5ChXKTKR
-# wiMqPbfq+qYwDQYJKoZIhvcNAQELBQADggEBAGBrwbmZj03Wz7xZAcuWI1PYheNl
-# xks59o5aIUehEKhnc3m3hC7swtL0MLpSwd15ahxoLjKLh7iEsUcvqkUa4Q3DE54s
-# lbxfG8eT3YoH8GKpMeZb12dUKk9llqlQpoLzFzaLoixp7dNhi08BIv5LOUTHdM/X
-# HDw07N4jzTAVzyTqUnRP4DddH51OQuNzruN2sSt8GmcADQElUaD/yvZ+BKfY8HBv
-# HUTOOGpCByR5lqnoRhALnKM+rPlelkA1mWzNkHeVCg3jhNNQSScXtQvymsi07yVF
-# zqfBq8h4+dsaIliRAEVDTGk1q7viUiB8bmCv/ht/LU91zehzwiO2EtmzGz8xggH9
-# MIIB+QIBATBLMDcxNTAzBgNVBAMMLENocmlzIFN0b25lIDxjaHJpcy5zdG9uZUBu
-# dXdhdmVwYXJ0bmVycy5jb20+AhBZVP3hQBiZh0jf8jC4J2H6MA0GCWCGSAFlAwQC
-# AQUAoIGEMBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwG
-# CisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwLwYJKoZI
-# hvcNAQkEMSIEIOkoq80JV11zNeQX3QiMxVNnoMD20NGLj8rnpLdOhI8fMA0GCSqG
-# SIb3DQEBAQUABIIBABGiMba2osZV03t6C8zc+H0iozzR7ta7vfleDvuROCPD7cG4
-# nx74NQbutl4aT3qtbtC8eqse/kCasPXXrdYaBsyfr6JhkTOfV5TB9xhlw2PeRxd3
-# Gr5GIsJMf7v6p2PXlolCN35mdO2jP7Woud8KIMNKwVQchBDxUR8dVxH2haA0HRru
-# UFSJF5qaiyQO0FEGN+NrudfK98xSZv+ubwJixk4LrotF7eATol6SkC1pR32E8Vpt
-# K5DfaBzLfuahStZHNMjQ8bvdSAIigNm54dhPZHUU9ppL2G0Zr79R6PYyHCGMCjq0
-# AQIiovZ3PGNgeMLY8ADMHXoy5nqBOJvW5LbHzwM=
-# SIG # End signature block
